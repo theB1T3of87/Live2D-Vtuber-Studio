@@ -52,6 +52,7 @@ add_library(mediapipefacelandmark SHARED
 target_include_directories(mediapipefacelandmark PRIVATE
     ${TRACKING_DIR}/include
     ${MNN_INCLUDE_DIR}
+    ${MNN_INCLUDE_DIR}/../tools/cv/include
 )
 target_compile_features(mediapipefacelandmark PRIVATE cxx_std_17)
 target_link_libraries(mediapipefacelandmark PRIVATE MNN MNN_Express android log)
