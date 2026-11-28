@@ -115,12 +115,25 @@ class Live2DRenderer(
         fun shutdown() {
             running = false
             interrupt()
-            try { join(1500) } catch (_: InterruptedException) { Thread.currentThread().interrupt() }
+            try {
+                join(5_000)
+                if (isAlive) {
+                    Log.e(RENDER_TAG, "Render thread did not stop within 5 seconds; requesting final shutdown")
+                    interrupt()
+                    join(2_000)
+                }
+                if (isAlive) Log.e(RENDER_TAG, "Render thread is still alive after shutdown timeout")
+            } catch (_: InterruptedException) {
+                Thread.currentThread().interrupt()
+            }
         }
 
         override fun run() {
-            if (!initEgl()) { releaseEgl(); return }
             try {
+                if (!initEgl()) {
+                    val error = EGL14.eglGetError()
+                    throw IllegalStateException("Could not initialize EGL (0x" + error.toString(16) + ")")
+                }
                 NativeCubismBridge.nativeOnStart()
                 NativeCubismBridge.nativeOnSurfaceCreated()
                 NativeCubismBridge.nativeOnSurfaceChanged(targetWidth, targetHeight)
@@ -136,13 +149,26 @@ class Live2DRenderer(
                 var accumulatedFrameNs = 0L
                 while (running) {
                     val frameStartNs = System.nanoTime()
-                    while (true) (commands.poll() ?: break).invoke()
+                    while (true) {
+                        val command = commands.poll() ?: break
+                        try {
+                            command.invoke()
+                        } catch (error: Throwable) {
+                            Log.e(RENDER_TAG, "Queued Cubism command failed", error)
+                        }
+                    }
                     if (resizePending) {
-                        NativeCubismBridge.nativeOnSurfaceChanged(targetWidth, targetHeight)
+                        NativeCubismBridge.nativeOnSurfaceChanged(
+                            targetWidth.coerceAtLeast(1),
+                            targetHeight.coerceAtLeast(1),
+                        )
                         resizePending = false
                     }
                     NativeCubismBridge.nativeOnDrawFrame()
-                    EGL14.eglSwapBuffers(display, eglSurface)
+                    if (!EGL14.eglSwapBuffers(display, eglSurface)) {
+                        val error = EGL14.eglGetError()
+                        throw IllegalStateException("eglSwapBuffers failed (0x" + error.toString(16) + ")")
+                    }
                     val frameEndNs = System.nanoTime()
 
                     framesInWindow++
@@ -167,8 +193,10 @@ class Live2DRenderer(
                     }
                     if (Thread.interrupted() && !running) break
                 }
-            } catch (_: Throwable) {
-                // Keep renderer failures isolated from the foreground overlay service.
+            } catch (error: Throwable) {
+                // Keep renderer failures isolated from the foreground overlay service,
+                // but never swallow the cause: logs are essential for diagnosing blank overlays.
+                Log.e(RENDER_TAG, "Native Cubism render loop stopped", error)
             } finally {
                 runCatching { NativeCubismBridge.nativeOnStop() }
                 runCatching { NativeCubismBridge.nativeOnDestroy() }
