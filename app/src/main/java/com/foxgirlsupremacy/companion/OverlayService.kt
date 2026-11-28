@@ -326,7 +326,6 @@ class OverlayService : LifecycleService(), SharedPreferences.OnSharedPreferenceC
         updateTrackingStatus("Iniciando…")
         faceTrackingController = MnnFaceTrackingController(
             this,
-            this,
             onTracking = { data -> liveRenderer.setFaceTrackingData(data) },
             onStatus = ::updateTrackingStatus,
         ).also { it.start() }
