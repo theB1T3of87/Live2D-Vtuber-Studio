@@ -36,7 +36,7 @@ class OverlayService : LifecycleService(), SharedPreferences.OnSharedPreferenceC
 
     private lateinit var windowManager: WindowManager
     private lateinit var renderer: CharacterRenderer
-    private var faceTrackingController: FaceTrackingController? = null
+    private var faceTrackingController: MnnFaceTrackingController? = null
     private lateinit var settings: Settings
     private lateinit var animMapping: AnimMapping
     private lateinit var controller: CompanionController
@@ -324,7 +324,7 @@ class OverlayService : LifecycleService(), SharedPreferences.OnSharedPreferenceC
             return
         }
         updateTrackingStatus("Iniciando…")
-        faceTrackingController = FaceTrackingController(
+        faceTrackingController = MnnFaceTrackingController(
             this,
             this,
             onTracking = { data -> liveRenderer.setFaceTrackingData(data) },
