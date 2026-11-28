@@ -1,0 +1,41 @@
+name: Import flope base
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/import-flope.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout destination
+        uses: actions/checkout@v4
+        with:
+          path: destination
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Checkout flope
+        uses: actions/checkout@v4
+        with:
+          repository: theB1T3of87/flope
+          ref: main
+          path: source
+      - name: Copy source tree
+        run: |
+          rsync -a --exclude='.git' source/ destination/
+      - name: Commit imported project
+        working-directory: destination
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m "Import flope as application base"
+            git push origin HEAD:main
+          else
+            echo "No changes to import."
+          fi
