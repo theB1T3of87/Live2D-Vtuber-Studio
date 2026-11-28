@@ -14,7 +14,7 @@ android {
         targetSdk = 35
         versionCode = 2
         versionName = "0.2-native-cubism"
-        ndk { abiFilters += listOf("arm64-v8a", "x86_64") }
+        ndk { abiFilters += listOf("arm64-v8a") }
         externalNativeBuild {
             cmake { cppFlags += listOf("-std=c++14", "-fexceptions", "-frtti") }
         }
@@ -33,11 +33,16 @@ android {
 
     androidResources { noCompress += listOf("task") }
 
-    sourceSets.getByName("main").assets.srcDirs(
-        "src/main/assets",
-        "../FoxGirlSupremacy/CubismSdkForNative-5-r.5/Samples/OpenGL/Shaders/StandardES",
-        "../FoxGirlSupremacy/CubismSdkForNative-5-r.5/Framework/src/Rendering/OpenGL/Shaders/StandardES",
-    )
+    sourceSets.getByName("main").apply {
+        java.srcDirs("src/main/java", "../tracking-integration/source")
+        assets.srcDirs(
+            "src/main/assets",
+            "../tracking-integration/assets",
+            "../FoxGirlSupremacy/CubismSdkForNative-5-r.5/Samples/OpenGL/Shaders/StandardES",
+            "../FoxGirlSupremacy/CubismSdkForNative-5-r.5/Framework/src/Rendering/OpenGL/Shaders/StandardES",
+        )
+        jniLibs.srcDirs("src/main/jniLibs", "../tracking-integration/native/jniLibs")
+    }
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
