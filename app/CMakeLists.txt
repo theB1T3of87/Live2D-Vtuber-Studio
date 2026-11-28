@@ -26,5 +26,36 @@ add_library(${APP_NAME} SHARED)
 add_subdirectory(${COMMON_SRC_PATH} ${CMAKE_CURRENT_BINARY_DIR}/src/Common)
 add_subdirectory(src/main/cpp)
 target_link_libraries(${APP_NAME} Framework Live2DCubismCore GLESv2 log android)
+
+# VirtualFaceCapture-MNN native face tracking
+set(TRACKING_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../tracking-integration/native/mediapipefacelandmark)
+set(MNN_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../ThirdParty/MNN/include)
+set(MNN_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../tracking-integration/native/jniLibs/${ANDROID_ABI})
+
+if(NOT EXISTS "${MNN_INCLUDE_DIR}/MNN/Interpreter.hpp")
+    message(FATAL_ERROR "MNN headers missing. Initialize the ThirdParty/MNN submodule.")
+endif()
+
+add_library(MNN SHARED IMPORTED)
+set_target_properties(MNN PROPERTIES IMPORTED_LOCATION "${MNN_LIB_DIR}/libMNN.so")
+add_library(MNN_Express SHARED IMPORTED)
+set_target_properties(MNN_Express PROPERTIES IMPORTED_LOCATION "${MNN_LIB_DIR}/libMNN_Express.so")
+
+add_library(mediapipefacelandmark SHARED
+    ${TRACKING_DIR}/MediaPipeFaceLandmarkJNI.cpp
+    ${TRACKING_DIR}/src/core/face_detector.cpp
+    ${TRACKING_DIR}/src/core/face_landmarker.cpp
+    ${TRACKING_DIR}/src/core/blendshape_predictor.cpp
+    ${TRACKING_DIR}/yuv_converter.cpp
+    ${TRACKING_DIR}/mnn_yuv_converter.cpp
+)
+target_include_directories(mediapipefacelandmark PRIVATE
+    ${TRACKING_DIR}/include
+    ${MNN_INCLUDE_DIR}
+)
+target_compile_features(mediapipefacelandmark PRIVATE cxx_std_17)
+target_link_libraries(mediapipefacelandmark PRIVATE MNN MNN_Express android log)
+target_link_options(mediapipefacelandmark PRIVATE "-Wl,-z,max-page-size=16384")
+
 target_include_directories(${APP_NAME} PRIVATE ${STB_PATH})
 target_link_options(${APP_NAME} PRIVATE "-Wl,-z,max-page-size=16384")
