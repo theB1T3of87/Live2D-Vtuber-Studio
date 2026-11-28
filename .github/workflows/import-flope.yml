@@ -1,4 +1,4 @@
-name: Import flope base
+name: Clone flope base
 on:
   push:
     branches: [main]
@@ -10,7 +10,7 @@ permissions:
   contents: write
 
 jobs:
-  import:
+  clone:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout destination
@@ -18,24 +18,24 @@ jobs:
         with:
           path: destination
           token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Checkout flope
-        uses: actions/checkout@v4
-        with:
-          repository: theB1T3of87/flope
-          ref: main
-          path: source
-      - name: Copy source tree
+      - name: Clone source repository
         run: |
-          rsync -a --exclude='.git' source/ destination/
-      - name: Commit imported project
+          git clone --depth 1 https://github.com/theB1T3of87/flope.git source
+      - name: Replace destination working tree
+        run: |
+          rsync -a --delete \
+            --exclude='.git' \
+            --exclude='.github/workflows/***' \
+            source/ destination/
+      - name: Commit cloned source
         working-directory: destination
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           if ! git diff --cached --quiet; then
-            git commit -m "Import flope as application base"
+            git commit -m "Clone flope as project base"
             git push origin HEAD:main
           else
-            echo "No changes to import."
+            echo "Destination already matches flope."
           fi
