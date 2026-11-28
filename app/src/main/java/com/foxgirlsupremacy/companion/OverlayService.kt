@@ -174,7 +174,7 @@ class OverlayService : LifecycleService(), SharedPreferences.OnSharedPreferenceC
         val notification: Notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(getString(R.string.notif_title))
             .setContentText(getString(R.string.notif_text))
-            .setSmallIcon(R.drawable.ic_companion)
+            .setSmallIcon(R.drawable.live2d_logo)
             .setContentIntent(openApp)
             .addAction(R.drawable.ic_snack, getString(R.string.notif_action_snack), snackIntent)
             .setOngoing(true)
